@@ -66,7 +66,7 @@ public class TestDay3 {
         ActorSystem testSystem = ActorSystem.create("TestSystem2");
         final CompletionStage<DiagnosticReport> future
                 = FileIO.fromPath(
-                        Paths.get("/home/mih/projects/advent_of_code_2021/src/main/resources/day3/test2.txt"))
+                        Paths.get("/home/mih/projects/advent_of_code_2021/src/main/resources/day3/test2_header.txt"))
                 .via(Framing.delimiter(ByteString.fromString("\n"), 256, FramingTruncation.ALLOW))
                 .runWith(foundConditions(), testSystem);
 

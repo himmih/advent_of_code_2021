@@ -108,7 +108,7 @@ public class TestDay2 {
     public void testPartTowResult() throws ExecutionException, InterruptedException, TimeoutException {
         final CompletionStage<Day2.PositionWithAim> future
                 = FileIO.fromPath(
-                        Paths.get("/home/mih/projects/advent_of_code_2021/src/main/resources/day2/test2.txt"))
+                        Paths.get("/home/mih/projects/advent_of_code_2021/src/main/resources/day2/test2_header.txt"))
                 .via(Framing.delimiter(ByteString.fromString("\n"), 256, FramingTruncation.ALLOW))
                 .runWith(foundPositionWithAim(), testSystem);
 

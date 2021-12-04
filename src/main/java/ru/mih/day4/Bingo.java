@@ -2,10 +2,7 @@ package ru.mih.day4;
 
 import akka.japi.Pair;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.StringTokenizer;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class Bingo {
@@ -31,6 +28,19 @@ public class Bingo {
         public String toString() {
             return String.valueOf(number);
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            NumberOnBoard that = (NumberOnBoard) o;
+            return number == that.number;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(number);
+        }
     }
 
     public static class Board implements Cloneable{
@@ -42,6 +52,11 @@ public class Bingo {
 
         public Board() { //crate empty board
             rc = new ArrayList<>();
+        }
+
+        @Override
+        public String toString() {
+            return rc.stream().map(row -> String.valueOf(row)).collect(Collectors.joining());
         }
 
         public void addRow(String row){
@@ -102,9 +117,25 @@ public class Bingo {
             return Optional.empty();
         }
 
+        public Integer getWinSumUnmarkedNumber(){
+           Optional<Integer> o = rc.stream().map(r -> r.stream().filter(a -> !a.marked).map(a -> a.number).reduce((a, b)->a+b))
+                   .filter(Optional::isPresent).map(x -> x.get())
+                   .reduce((x, y) -> x + y);
+           return o.isPresent()?o.get():0;
+        }
 
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Board board = (Board) o;
+            return rc.equals(board.rc);
+        }
 
-
+        @Override
+        public int hashCode() {
+            return Objects.hash(rc);
+        }
     }
 
 }

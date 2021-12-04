@@ -19,7 +19,7 @@ public class Day2 {
 
         Source<ByteString, CompletionStage<IOResult>> movesSource
                 = FileIO.fromPath(
-                        Paths.get("/home/mih/projects/advent_of_code_2021/src/main/resources/day2/test2.txt"))
+                        Paths.get("/home/mih/projects/advent_of_code_2021/src/main/resources/day2/test2_header.txt"))
                 .via(Framing.delimiter(ByteString.fromString("\n"), 256, FramingTruncation.ALLOW));
 
 
