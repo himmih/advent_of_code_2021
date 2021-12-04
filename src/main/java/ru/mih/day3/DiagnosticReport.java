@@ -23,13 +23,11 @@ public class DiagnosticReport {
 
             String onlyNumbersLine = line.trim(); //.replaceAll("[^01]", ""); odd symbols only whitespaces
             int lineLength = onlyNumbersLine.length();
-            System.out.println("onesCount size: " + onesCount.length + " with line: " + onlyNumbersLine);
 
             int[] newOnesCount;
 
             if (lineCount == 0){
                 newOnesCount = new int[lineLength];
-                System.out.println("creating array with  size: " + lineLength);
             }else {
                 if (onesCount.length != lineLength){
                     throw new IllegalStateException("Wrong number in line: " + lineCount+1
