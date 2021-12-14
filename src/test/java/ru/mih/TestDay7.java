@@ -40,16 +40,16 @@ public class TestDay7 {
 
     @Test
     public void testMove4() throws ExecutionException, InterruptedException {
-        assertEquals(new Pair<>(349, 355592),getMinPositionAndSteps("test4.txt"));
+        assertEquals(new Pair<>(349, 355592),getMinPositionAndSteps("test4.txt.txt"));
     }
 
     @Test
     public void testMove5() throws ExecutionException, InterruptedException {
-        assertEquals(new Pair<>(488, 101618069),getMinPositionAndCosts("test4.txt"));
+        assertEquals(new Pair<>(488, 101618069),getMinPositionAndCosts("test4.txt.txt"));
     }
     @Test
     public void testMove6() throws ExecutionException, InterruptedException {
-        assertEquals(new Pair<>(488, new BigDecimal(101618069)),getMinPositionAndBigCosts("test4.txt"));
+        assertEquals(new Pair<>(488, new BigDecimal(101618069)),getMinPositionAndBigCosts("test4.txt.txt"));
     }
 
     public Pair<Integer, Integer> getMinPositionAndSteps(String fileName) throws ExecutionException, InterruptedException {
