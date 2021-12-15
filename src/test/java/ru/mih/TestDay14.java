@@ -27,7 +27,12 @@ public class TestDay14 {
 
     @Test
     public void testOne() throws ExecutionException, InterruptedException {
-        assertEquals(3831, countDiff("CKKOHNSBPCPCHVNKHFFK", "test2"));
+        assertEquals(5725739914284L, countDiff("CKKOHNSBPCPCHVNKHFFK", "test2"));
+    }
+
+    @Test
+    public void testOne2() throws ExecutionException, InterruptedException {
+        assertEquals(5725739914283L, countDiff("CKKOHNSBPCPCHVNKHFFK", "test2"));
     }
 
     public long countDiff(String in, String fileChanges) throws ExecutionException, InterruptedException {
@@ -42,7 +47,7 @@ public class TestDay14 {
                         .sliding(2, 1)
                         .map(list -> new Pair<String, String>(list.get(0), list.get(1)));
 
-        Flow<Pair<String, String>, Pair<String, String>, NotUsed> changeFlow =
+        final Flow<Pair<String, String>, Pair<String, String>, NotUsed> changeFlow =
                 Flow.<Pair<String, String>>create()
                         .mapConcat(pair -> {
                             ArrayList<Pair<String, String>> out = new ArrayList<>();
@@ -59,66 +64,89 @@ public class TestDay14 {
 
         Flow<Pair<String,String>, Pair<String, String>, NotUsed> workFlow = changeFlow;
 
-        for (int i = 0; i < 40; i++) { //< step - 1
+        for (int i = 0; i < 4; i++) { //< step - 1
             workFlow = workFlow.via(changeFlow);
         }
-
-        final String lastOne = start.via(startFlow).via(workFlow)
-                .map(pair -> pair.second())
-                .toMat(Sink.last(), Keep.right())
+        LinkedHashMap<Pair<String, String>, Long> firstStep =
+               start.via(startFlow)
+                .via(workFlow)
+                .fold(new LinkedHashMap<Pair<String, String>, Long>(), (groups, pair) -> {
+                    if (groups.containsKey(pair)){
+                        groups.put(pair, groups.get(pair)+1L);
+                    }else {
+                        groups.put(pair, 1L) ;
+                    }
+                    return new LinkedHashMap<>(groups);
+                })
+               .toMat(Sink.head(), Keep.right())
                 .run(testSystem)
                 .toCompletableFuture()
                 .get();
 
-       return start.via(startFlow).via(workFlow)
-                .map(pair -> pair.first())
-//                .fold(new StringBuffer(), (acc, e) -> acc.append(e))
-//                .map(a -> a.length()+1)
-                .fold(new HashMap<String, Long>(), (groups, ch) -> {
-                    if (groups.containsKey(ch)){
-                        groups.put(ch, groups.get(ch)+1);
-                    }else {
-                        if (ch.equals(lastOne))
-                            groups.put(ch, 2L) ;
-                        else
-                            groups.put(ch, 1L) ;
+        return Source.from(firstStep.entrySet())
+                .mapAsync(8, entry -> {
+                    Flow<Pair<String,String>, Pair<String, String>, NotUsed> makeLine = changeFlow;
+                    for (int i = 0; i < 4; i++) { //< step - 1
+                        makeLine = makeLine.via(changeFlow);
                     }
-                    return new HashMap<>(groups);
+                    String lastLetter = Source.single(entry.getKey()).
+                            via(makeLine)
+                            .map(pair -> pair.second())
+                            .toMat(Sink.last(), Keep.right())
+                            .run(testSystem)
+                            .toCompletableFuture()
+                            .get();
+
+                    return Source.single(entry.getKey())
+                            .via(makeLine)
+                            .map(pair -> pair.first())
+                            .fold(new HashMap<String, Long>(), (groups, ch) -> {
+                                if (groups.containsKey(ch)){
+                                    groups.put(ch, groups.get(ch)+1L);
+                                }else {
+                                    if (ch.equals(lastLetter)) {
+                                        groups.put(ch, 1L);
+                                    }else {
+                                        groups.put(ch, 1L);
+                                    }
+                                }
+                                return new HashMap<>(groups);
+                            })
+                            .map(map -> {
+                                HashMap<String, Long> out = new HashMap<>();
+                                for(Map.Entry<String, Long> e: map.entrySet()){
+                                    out.put(e.getKey(), e.getValue()*entry.getValue());
+                                }
+                                return out;
+                                })
+                            .toMat(Sink.head(), Keep.right())
+                            .run(testSystem)
+                            .toCompletableFuture();
+                })
+                .fold(new HashMap<String, Long>(), (acc, b) -> {
+                    HashMap<String, Long> out  = new LinkedHashMap<>(acc);
+                        for(Map.Entry<String, Long> pair: b.entrySet()){
+                            if (out.containsKey(pair.getKey())){
+                                out.put(pair.getKey(), out.get(pair.getKey()) + pair.getValue());
+                            }else {
+                                out.put(pair.getKey(), pair.getValue());
+                            }
+                        }
+                        return out;
                 })
                 .mapConcat(map -> map.values())
                 .fold(new Pair<>(0L, Long.MAX_VALUE), (acc, i) -> {
-                   long max = (i > acc.first())?i:acc.first();
-                   long min = (i < acc.second())?i:acc.second();
-                   return new Pair<>(max, min);
+                    long max = (i > acc.first())?i:acc.first();
+                    long min = (i < acc.second())?i:acc.second();
+                    return new Pair<>(max, min);
                 })
-                .map(pair -> pair.first() - pair.second())
+                .map(pair -> pair.first() - pair.second() - 1)
                 .toMat(Sink.head(), Keep.right())
                 .run(testSystem)
                 .toCompletableFuture()
                 .get();
 
     }
-
-//    private ArrayList<Pair<String, String>> insert(ArrayList<Pair<String, String>> trans, Pair<String, String> change ) { //changes AB -> C
-//
-//        ArrayList<Pair<String, String>> out = new ArrayList(trans);
-//
-//        Pair<String, String> changeFrom = new Pair<>(String.valueOf(change.first().charAt(0)), String.valueOf(change.first().charAt(1)));
-//
-//        for (int i = 0; i < trans.size(); i++) {
-//
-//        }
-//
-//        while(out.contains(changeFrom)){
-//            int index = out.indexOf(changeFrom);
-//            out.remove(index);
-//            out.set(index, new Pair(changeFrom.first(), change.second()));
-//            out.set(index+1, new Pair(change.second(), changeFrom.second()));
-//        }
-//
-//        return new ArrayList<>(out);
-//    }
-
 
     private Map<Pair<String, String>, String> getPaths(String fileName) throws ExecutionException, InterruptedException {
 //        final List<Pair<String, String>> inSource =
@@ -138,7 +166,117 @@ public class TestDay14 {
                 .get().stream().collect(Collectors.toMap(x -> x.first(), y -> y.second()));
 
 
+    }
+    public long countDiffFirst(String in, String fileChanges) throws ExecutionException, InterruptedException {
+        Map<Pair<String, String>, String> changes = getPaths(fileChanges);
 
+        Source<String, NotUsed> start =
+                Source.from(in.chars()
+                        .mapToObj(x -> String.valueOf((char)x)).collect(Collectors.toList()));
+
+        Flow<String, Pair<String, String>, NotUsed> startFlow =
+                Flow.of(String.class)
+                        .sliding(2, 1)
+                        .map(list -> new Pair<String, String>(list.get(0), list.get(1)));
+
+        final Flow<Pair<String, String>, Pair<String, String>, NotUsed> changeFlow =
+                Flow.<Pair<String, String>>create()
+                        .mapConcat(pair -> {
+                            ArrayList<Pair<String, String>> out = new ArrayList<>();
+                            if (changes.containsKey(pair)){
+                                String changeTo = changes.get(pair);
+                                out.add(new Pair<String, String>(pair.first(), changeTo));
+                                out.add(new Pair<String, String>(changeTo, pair.second()));
+                                return out;
+                            }else {
+                                out.add(pair);
+                                return out;
+                            }
+                        });
+
+        Flow<Pair<String,String>, Pair<String, String>, NotUsed> workFlow = changeFlow;
+
+        for (int i = 0; i < 4; i++) { //< step - 1
+            workFlow = workFlow.via(changeFlow);
+        }
+        LinkedHashMap<Pair<String, String>, Long> firstStep =
+                start.via(startFlow)
+                        .via(workFlow)
+                        .fold(new LinkedHashMap<Pair<String, String>, Long>(), (groups, pair) -> {
+                            if (groups.containsKey(pair)){
+                                groups.put(pair, groups.get(pair)+1L);
+                            }else {
+                                groups.put(pair, 1L) ;
+                            }
+                            return new LinkedHashMap<>(groups);
+                        })
+                        .toMat(Sink.head(), Keep.right())
+                        .run(testSystem)
+                        .toCompletableFuture()
+                        .get();
+
+        return Source.from(firstStep.entrySet())
+                .mapAsync(8, entry -> {
+                    Flow<Pair<String,String>, Pair<String, String>, NotUsed> makeLine = changeFlow;
+                    for (int i = 0; i < 4; i++) { //< step - 1
+                        makeLine = makeLine.via(changeFlow);
+                    }
+                    String lastLetter = Source.single(entry.getKey()).
+                            via(makeLine)
+                            .map(pair -> pair.second())
+                            .toMat(Sink.last(), Keep.right())
+                            .run(testSystem)
+                            .toCompletableFuture()
+                            .get();
+
+                    return Source.single(entry.getKey())
+                            .via(makeLine)
+                            .map(pair -> pair.first())
+                            .fold(new HashMap<String, Long>(), (groups, ch) -> {
+                                if (groups.containsKey(ch)){
+                                    groups.put(ch, groups.get(ch)+1L);
+                                }else {
+                                    if (ch.equals(lastLetter)) {
+                                        groups.put(ch, 1L);
+                                    }else {
+                                        groups.put(ch, 1L);
+                                    }
+                                }
+                                return new HashMap<>(groups);
+                            })
+                            .map(map -> {
+                                HashMap<String, Long> out = new HashMap<>();
+                                for(Map.Entry<String, Long> e: map.entrySet()){
+                                    out.put(e.getKey(), e.getValue()*entry.getValue());
+                                }
+                                return out;
+                            })
+                            .toMat(Sink.head(), Keep.right())
+                            .run(testSystem)
+                            .toCompletableFuture();
+                })
+                .fold(new HashMap<String, Long>(), (acc, b) -> {
+                    HashMap<String, Long> out  = new LinkedHashMap<>(acc);
+                    for(Map.Entry<String, Long> pair: b.entrySet()){
+                        if (out.containsKey(pair.getKey())){
+                            out.put(pair.getKey(), out.get(pair.getKey()) + pair.getValue());
+                        }else {
+                            out.put(pair.getKey(), pair.getValue());
+                        }
+                    }
+                    return out;
+                })
+                .mapConcat(map -> map.values())
+                .fold(new Pair<>(0L, Long.MAX_VALUE), (acc, i) -> {
+                    long max = (i > acc.first())?i:acc.first();
+                    long min = (i < acc.second())?i:acc.second();
+                    return new Pair<>(max, min);
+                })
+                .map(pair -> pair.first() - pair.second() - 1)
+                .toMat(Sink.head(), Keep.right())
+                .run(testSystem)
+                .toCompletableFuture()
+                .get();
 
     }
 
